@@ -805,6 +805,24 @@ if g:Tex_SmartKeyDot
 endif
 " }}}
 
+
+" Python detection: Tex_UsePython(), Tex_HasPython, Tex_Python[File]Cmd {{{
+if has('python3')
+	let g:Tex_HasPython = 3
+	let g:Tex_PythonCmd = 'python3'
+	let g:Tex_PythonFileCmd = 'py3file'
+elseif has('python')
+	let g:Tex_HasPython = 2
+	let g:Tex_PythonCmd = 'python'
+	let g:Tex_PythonFileCmd = 'pyfile'
+else
+	let g:Tex_HasPython = 0
+end
+function! Tex_UsePython()
+	return g:Tex_HasPython && Tex_GetVarValue('Tex_UsePython')
+endfunction
+" }}}
+
 " source texproject.vim before other files
 exe 'source '.fnameescape(s:path.'/texproject.vim')
 
@@ -942,15 +960,9 @@ function! Tex_GotoTempFile()
 	exec 'silent! split '.s:tempFileName
 endfunction " }}}
 " Tex_IsPresentInFile: finds if a string str, is present in filename {{{
-if has('python') && g:Tex_UsePython
+if Tex_UsePython()
 	function! Tex_IsPresentInFile(regexp, filename)
-		exec 'python isPresentInFile(r"'.a:regexp.'", r"'.a:filename.'")'
-
-		return retval
-	endfunction
-elseif has('python3') && g:Tex_UsePython
-	function! Tex_IsPresentInFile(regexp, filename)
-		exec 'python3 isPresentInFile(r"'.a:regexp.'", r"'.a:filename.'")'
+		exec g:Tex_PythonCmd . ' isPresentInFile(r"'.a:regexp.'", r"'.a:filename.'")'
 
 		return retval
 	endfunction
@@ -984,17 +996,10 @@ if exists('*readfile')
 		endif
 		return join(readfile(a:filename), "\n")
 	endfunction
-elseif has('python') && g:Tex_UsePython
+elseif Tex_UsePython()
 	function! Tex_CatFile(filename)
 		" catFile assigns a value to retval
-		exec 'python catFile("'.a:filename.'")'
-
-		return retval
-	endfunction
-elseif has('python3') && g:Tex_UsePython
-	function! Tex_CatFile(filename)
-		" catFile assigns a value to retval
-		exec 'python3 catFile("'.a:filename.'")'
+		exec g:Tex_PythonCmd . ' catFile("'.a:filename.'")'
 
 		return retval
 	endfunction
@@ -1028,17 +1033,9 @@ endif
 " }}}
 " Tex_DeleteFile: removes a file if present {{{
 " Description: 
-if has('python') && g:Tex_UsePython
+if Tex_UsePython()
 	function! Tex_DeleteFile(filename)
-		exec 'python deleteFile(r"'.a:filename.'")'
-		
-		if exists('retval')
-			return retval
-		endif
-	endfunction 
-elseif has('python3') && g:Tex_UsePython
-	function! Tex_DeleteFile(filename)
-		exec 'python3 deleteFile(r"'.a:filename.'")'
+		exec g:Tex_PythonCmd . ' deleteFile(r"'.a:filename.'")'
 		
 		if exists('retval')
 			return retval
@@ -1057,12 +1054,8 @@ endif
 let &cpo = s:save_cpo
 
 " Define the functions in python if available.
-if (!has('python') && !has('python3')) || !g:Tex_UsePython
-	finish
-elseif has('python')
-    exec 'pyfile '.fnameescape(expand('<sfile>:p:h')).'/pytools.py'
-elseif has('python3')
-    exec 'py3file '.fnameescape(expand('<sfile>:p:h')).'/pytools.py'
+if Tex_UsePython()
+	exec g:Tex_PythonFileCmd . ' ' . fnameescape(expand('<sfile>:p:h')).'/pytools.py'
 endif
 
 " vim:fdm=marker:ff=unix:noet:ts=4:sw=4:nowrap

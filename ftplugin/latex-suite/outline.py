@@ -6,8 +6,6 @@
 # Description:
 #   This file implements a simple outline creation for latex documents.
 
-from __future__ import print_function
-
 import re
 import os
 import sys
@@ -73,6 +71,7 @@ def getSectionLabels_Root(lineinfo, section_prefix, label_prefix):
     prev_env = ''
     outstr = StringIO('')
     pres_depth = len(section_prefix)
+    indent = ' ' * (2*pres_depth + 2)
 
     #print '+getSectionLabels_Root: lineinfo = [%s]' % lineinfo
     for line in lineinfo.splitlines():
@@ -88,6 +87,9 @@ def getSectionLabels_Root(lineinfo, section_prefix, label_prefix):
         # we found a label!
         m = re.search(r'\\label{(%s.*?)}' % label_prefix, line)
         if m:
+            # Get the corresponding label
+            label = m.group(1)
+
             # add the current line (except the \label command) to the text
             # which will be displayed below this label
             prev_txt += re.search(r'(^.*?)\\label{', line).group(1)
@@ -105,11 +107,9 @@ def getSectionLabels_Root(lineinfo, section_prefix, label_prefix):
             # :          e^{i\pi} + 1 = 0
             #
             # Use the current "section depth" for the leading indentation.
-            print('>%s%s\t\t<%s>' % (' ' * (2 * pres_depth + 2),
-                                               m.group(1), fname)
-					       , file=outstr)
-            print(':%s%s' % (' ' * (2 * pres_depth + 4), prev_txt)
-					       , file=outstr)
+            outstr.write('>%s%s\t\t<%s>\n' % (indent, label, fname))
+            outstr.write(':%s  %s\n'       % (indent, prev_txt))
+
             prev_txt = ''
 
         # If we just encoutered the start or end of an environment or a

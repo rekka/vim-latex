@@ -4,6 +4,9 @@
 
 import re
 import os
+
+import six
+
 try:
     from urllib.request import urlopen
     from urllib.parse import quote
@@ -32,13 +35,8 @@ class Bibliography(dict):
                 }
         """
 
-        if macros:
-            try:
-                for k, v in macros.iteritems():
-                    txt = txt.replace(k, '{' + v + '}')
-            except AttributeError:
-                for k, v in macros.items():
-                    txt = txt.replace(k, '{' + v + '}')
+        for k, v in six.iteritems(macros):
+            txt = txt.replace(k, '{' + v + '}')
 
         m = re.match(r'\s*@(\w+){\s*((\S+),)?(.*)}\s*', txt,
                      re.MULTILINE | re.DOTALL)
@@ -70,13 +68,7 @@ class Bibliography(dict):
                 count = 1
                 while 1:
                     try:
-                        mn = mniter.next()
-                    except AttributeError:
-                        try:
-                            mn = next(mniter)
-                        except StopIteration:
-                            return None
-
+                        mn = six.next(mniter)
                     except StopIteration:
                         return None
 
@@ -160,16 +152,11 @@ class Bibliography(dict):
                 s += 'TI "%(title)s"\n' % self
             if self['author']:
                 s += 'AU %(author)s\n' % self
-            try:
-                for k, v in self.iteritems():
-                    if k not in ['title', 'author', 'bibtype', 'key', 'id', 'file',
-                                 'body', 'bodytext']:
-                        s += 'MI %s: %s\n' % (k, v)
-            except AttributeError:
-                for k, v in self.items():
-                    if k not in ['title', 'author', 'bibtype', 'key', 'id', 'file',
-                                 'body', 'bodytext']:
-                        s += 'MI %s: %s\n' % (k, v)
+
+            for k, v in six.iteritems(self):
+                if k not in ['title', 'author', 'bibtype', 'key', 'id', 'file',
+                             'body', 'bodytext']:
+                    s += 'MI %s: %s\n' % (k, v)
 
             return s.rstrip()
 
@@ -193,9 +180,8 @@ class BibFile:
                 self.addfile(f)
 
     def addfile(self, file):
-        fields = urlopen('file://' + quote(os.path.abspath(file))).read().split(b'@')
+        fields = urlopen('file://' + quote(os.path.abspath(file))).read().decode('utf-8').split('@')
         for f in fields:
-            f = f.decode('utf-8')
             if not (f and re.match('string', f, re.I)):
                 continue
 
@@ -203,7 +189,6 @@ class BibFile:
             self.macros.update(b['macro'])
 
         for f in fields:
-            f = f.decode('utf-8')
             if not f or re.match('string', f, re.I):
                 continue
 
