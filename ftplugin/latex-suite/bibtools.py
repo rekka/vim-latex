@@ -5,14 +5,30 @@
 import re
 import os
 
-import six
-
 try:
     from urllib.request import urlopen
     from urllib.parse import quote
 except ImportError:
     from urllib import urlopen
     from urllib import quote
+
+# Compatibility functions
+# Check for existence of builtin function next()
+try:
+    next
+except NameError:
+    def next(it):
+        return it.next()
+
+# Define items(dict) as an iterator over the items
+if not("iteritems" in dir(dict())):
+    # In python3, the job of iteritems() is done by items()
+    def items(dictionary):
+        return dictionary.items()
+else:
+    # In python2, we use iteritems()
+    def items(dictionary):
+        return dictionary.iteritems()
 
 
 class Bibliography(dict):
@@ -35,7 +51,7 @@ class Bibliography(dict):
                 }
         """
 
-        for k, v in six.iteritems(macros):
+        for k, v in items(macros):
             txt = txt.replace(k, '{' + v + '}')
 
         m = re.match(r'\s*@(\w+){\s*((\S+),)?(.*)}\s*', txt,
@@ -68,7 +84,7 @@ class Bibliography(dict):
                 count = 1
                 while 1:
                     try:
-                        mn = six.next(mniter)
+                        mn = next(mniter)
                     except StopIteration:
                         return None
 
@@ -153,7 +169,7 @@ class Bibliography(dict):
             if self['author']:
                 s += 'AU %(author)s\n' % self
 
-            for k, v in six.iteritems(self):
+            for k, v in items(self):
                 if k not in ['title', 'author', 'bibtype', 'key', 'id', 'file',
                              'body', 'bodytext']:
                     s += 'MI %s: %s\n' % (k, v)
